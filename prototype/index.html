@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Muse Local · 原型 v0.6</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="app">
+
+  <!-- ══════════ 标题栏 ══════════ -->
+  <header class="titlebar">
+    <div class="tb-left">
+      <div class="logo">◈</div>
+      <span class="brand-name">Muse Local</span>
+    </div>
+    <div class="tb-right">
+      <button class="env-badge ok" id="btnSelfCheck" title="查看这台电脑的环境与软件">
+        <span class="dot"></span><span>环境自检通过</span>
+      </button>
+      <div class="wincontrols">
+        <button class="wc" title="最小化">–</button>
+        <button class="wc" title="最大化">▢</button>
+        <button class="wc close" title="关闭">✕</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="body">
+
+    <!-- ══════════ 左侧导航 ══════════ -->
+    <nav class="rail">
+      <div class="rail-group">
+        <button class="rail-btn active" data-view="chat">
+          <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-4.1A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z"/></svg>
+          <span>聊天</span>
+        </button>
+        <button class="rail-btn" data-view="tasks">
+          <svg viewBox="0 0 24 24"><path d="M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>
+          <span>任务</span>
+        </button>
+        <button class="rail-btn" data-view="settings">
+          <svg viewBox="0 0 24 24"><path d="M4 21v-6M4 11V3M12 21v-8M12 9V3M20 21v-4M20 13V3M2 15h4M10 9h4M18 17h4"/></svg>
+          <span>设置</span>
+        </button>
+      </div>
+      <div class="rail-group rail-bottom">
+        <button class="rail-btn" id="btnRailEnv">
+          <svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>
+          <span>环境</span>
+        </button>
+        <div class="rail-avatar" title="本地用户">M</div>
+      </div>
+    </nav>
+
+    <main class="main">
+
+      <!-- ══════════ 聊天 ══════════ -->
+      <section class="view active" id="view-chat">
+        <div class="split" id="chatSplit">
+
+          <div class="pane main-pane">
+            <div class="pane-head">
+              <div class="ph-left">
+                <div class="ph-title">
+                  <h1 id="taskTitle">新建任务</h1>
+                  <p id="taskSub">ubuntu-01 · 没有图形桌面</p>
+                </div>
+                <span class="pill idle" id="taskStatusPill"><span class="dot"></span><span id="taskStatusText">待命</span></span>
+              </div>
+              <div class="ph-right">
+                <button class="btn ghost sm" id="btnStop" hidden>停止</button>
+              </div>
+            </div>
+
+            <div class="timeline" id="timeline"></div>
+
+            <div class="composer">
+              <div class="composer-box">
+                <textarea id="composerInput" rows="1" placeholder="给 AI 一个任务，例如：打开浏览器访问 Google 首页"></textarea>
+                <div class="composer-bar">
+                  <button class="model-chip" id="btnModelChip">claude-fable-5-1 <span class="caret-icon">⌄</span></button>
+                  <button class="icon-btn" id="btnAttach" title="添加附件">📎</button>
+                  <span class="hint">Enter 发送 · Shift+Enter 换行</span>
+                  <button class="send-btn" id="btnSend" title="发送">↑</button>
+                </div>
+              </div>
+              <div class="suggest" id="suggests"></div>
+            </div>
+          </div>
+
+          <div class="splitter hidden" id="splitter" title="拖动调整宽度 · 双击复位"></div>
+
+          <!-- 电脑：无桌面，只转播应用窗口。默认不显示，点对话里的快照才展开 -->
+          <aside class="pane dock hidden" id="dock">
+            <div class="dock-head">
+              <span class="dock-title"><span class="live-dot"></span>ubuntu-01</span>
+              <span class="tag-flat">无桌面</span>
+              <button class="btn ghost sm" data-act="takeover">接管窗口</button>
+              <button class="btn ghost sm" data-act="release" hidden>交还控制</button>
+              <button class="icon-btn" data-act="zoom" title="放大画面">⤢</button>
+              <button class="icon-btn" data-act="collapse" title="折叠画面">⌄</button>
+            </div>
+
+            <div class="dock-sub" id="dockSub">当前没有可显示的窗口</div>
+
+            <div class="screen-frame dock-frame" id="dockFrame">
+              <div class="stage">
+                <div class="screen live-screen" id="dockScreen"></div>
+                <div class="cursor live-cursor" id="dockCursor"></div>
+              </div>
+              <div class="control-badge" hidden>你在控制 · 直接点击画面操作</div>
+            </div>
+
+            <div class="dock-note" id="dockNote">你看到的只是 AI 正在操作的那个应用窗口，不是整台电脑的桌面。</div>
+          </aside>
+
+        </div>
+      </section>
+
+      <!-- ══════════ 任务 ══════════ -->
+      <section class="view" id="view-tasks">
+        <div class="page">
+          <div class="page-head">
+            <div>
+              <h2>任务中心</h2>
+              <p class="hint">所有对话共用同一台电脑，任务排队执行</p>
+            </div>
+            <div class="filters" id="taskFilters"></div>
+          </div>
+          <div class="stats" id="taskStats"></div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th style="width:42%">任务</th><th>状态</th><th>模型</th>
+                <th>耗时</th><th>Token</th><th>费用</th><th style="text-align:right">操作</th>
+              </tr>
+            </thead>
+            <tbody id="taskTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ══════════ 设置 ══════════ -->
+      <section class="view" id="view-settings">
+        <div class="page">
+          <div class="page-head">
+            <div><h2>设置</h2><p class="hint">模型服务、电脑资源、安全策略</p></div>
+            <button class="btn primary sm" id="btnSaveSettings">保存更改</button>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h3>模型服务</h3>
+              <button class="btn ghost sm" id="btnAddProvider">添加</button>
+            </div>
+            <div class="provider-list" id="providerList"></div>
+            <p class="note">API Key 只保存在本机密钥链，不会写入电脑。模型调用全部发生在软件这一侧。</p>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h3>电脑资源</h3><span class="hint">改动下次启动软件时生效</span></div>
+            <div class="form-grid">
+              <label>虚拟 CPU <output id="outVcpu">2 核</output>
+                <input type="range" id="rngVcpu" min="1" max="8" value="2" />
+              </label>
+              <label>内存 <output id="outMem">8192 MB</output>
+                <input type="range" id="rngMem" min="1024" max="16384" step="1024" value="8192" />
+              </label>
+              <label>磁盘 <output id="outDisk">150 GB</output>
+                <input type="range" id="rngDisk" min="20" max="200" step="10" value="150" />
+              </label>
+              <label>加速后端
+                <select id="selAccel">
+                  <option>WHPX（硬件加速）</option>
+                  <option>TCG（纯软件，较慢）</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h3>快照</h3><button class="btn ghost sm" id="btnNewSnapshot">新建快照</button></div>
+            <div id="snapshotList"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h3>工具权限</h3><span class="hint">决定 AI 每个动作是否需要你确认</span></div>
+            <div class="matrix" id="toolMatrix"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h3>网络策略</h3><span class="hint">电脑默认只允许访问以下域名</span></div>
+            <div class="chips-input" id="whitelist"></div>
+            <div class="row-gap">
+              <input class="input" id="inputDomain" placeholder="添加域名，例如 *.github.com" />
+              <button class="btn ghost sm" id="btnAddDomain">添加</button>
+            </div>
+            <p class="note">未在白名单内的访问会触发审批卡片，而不是直接失败。</p>
+          </div>
+
+          <div class="card warn">
+            <div class="card-head"><h3>能力与限制说明</h3></div>
+            <ul class="plain-list">
+              <li>这台电脑<b>没有图形桌面</b>，只能看到 AI 正在操作的应用窗口。</li>
+              <li>画面默认不显示，点对话里的快照即可展开，也可以折叠或放大。</li>
+              <li>接管后可以直接在画面里点击、输入、滚动。</li>
+              <li>宿主机断电、关机或休眠都会中断 AI 任务。</li>
+              <li>宿主共享目录默认只读，写入需要逐次审批。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
